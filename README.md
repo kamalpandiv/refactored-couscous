@@ -70,7 +70,9 @@ graph LR
 Clone the repository and install dependencies. We recommend using a virtual environment.
 
 ```bash
-git clone [https://github.com/yourusername/rag-framework.git](https://github.com/kamalpandiv/refactored-couscous.git)
+# Clone the repo
+git clone https://github.com/kamalpandiv/refactored-couscous.git
+
 cd rag-framework
 
 # Setup virtual environment
