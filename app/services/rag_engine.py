@@ -37,7 +37,9 @@ class RAGEngine:
             translator = QueryTranslationFactory.create(
                 strategy=translation_strategy, llm=self.llm
             )
-            queries_to_embed = await translator.translate(query) # the embedded new query are added to new list
+            queries_to_embed = await translator.translate(
+                query
+            )  # the embedded new query are added to new list
             print(f" ↳ Generated {len(queries_to_embed)} queries to search:")
             for i, q in enumerate(queries_to_embed):
                 print(f"        {i + 1}. {q}")

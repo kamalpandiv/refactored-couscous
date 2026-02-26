@@ -7,14 +7,14 @@ callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
 # Instantiate the LlamaCpp model
 llm = LlamaCpp(
-    model_path="/Users/gaan/Documents/kamal/python/rag_framework/models/Hermes-2-Pro-Llama-3-8B.Q4_K_M.gguf", # Replace with your model path
+    model_path="/Users/gaan/Documents/kamal/python/rag_framework/models/Hermes-2-Pro-Llama-3-8B.Q4_K_M.gguf",  # Replace with your model path
     temperature=0.75,
     max_tokens=2000,
-    n_ctx=4000, # Context window size
+    n_ctx=4000,  # Context window size
     top_p=1,
     callback_manager=callback_manager,
     verbose=True,
-    n_gpu_layers=-1 # Uncomment to offload all layers to the GPU if compiled with GPU support
+    n_gpu_layers=-1,  # Uncomment to offload all layers to the GPU if compiled with GPU support
 )
 
 # Define a prompt template

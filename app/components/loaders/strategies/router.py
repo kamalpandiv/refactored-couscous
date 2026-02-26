@@ -1,9 +1,11 @@
 import pdfplumber
 
+from app.core.config import settings
+
 from .base import PageStrategy
 from .table import TableStrategy
 from .text import TextStrategy
-from app.core.config import settings
+
 
 class PDFPageRouter:
     def __init__(self):
@@ -18,11 +20,11 @@ class PDFPageRouter:
         # If table parsing is globally disabled, skip the heavy lifting
         if not settings.ENABLE_TABLE_PARSING:
             return self.text_strategy
-            
+
         # 1. Broader detection settings
         # "text" strategy helps find tables even if they don't have black lines
         table_settings = {
-            "vertical_strategy": "lines", 
+            "vertical_strategy": "lines",
             "horizontal_strategy": "lines",
         }
 
@@ -53,7 +55,9 @@ class PDFPageRouter:
         table_coverage_ratio = total_table_area / total_page_area
 
         # DEBUG: Print stats to help tune thresholds
-        print(f"Page {page.page_number}: Coverage={table_coverage_ratio:.2f}, Valid Tables={significant_tables}")
+        print(
+            f"Page {page.page_number}: Coverage={table_coverage_ratio:.2f}, Valid Tables={significant_tables}"
+        )
 
         # 3. Decision Logic
         # If tables cover > 15% of the page OR there are multiple significant tables
