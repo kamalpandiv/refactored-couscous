@@ -1,3 +1,5 @@
+import os
+
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,8 +23,8 @@ class Settings(BaseSettings):
     # =========================
     # API Keys
     # =========================
-    OPENAI_API_KEY: str = ""
-    PINECONE_API_KEY: str = ""
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    PINECONE_API_KEY: str = os.getenv("PINECONE_API_KEY", "")
 
     # =========================
     # Database
