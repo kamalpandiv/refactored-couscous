@@ -1,6 +1,7 @@
+from datetime import datetime
+
 import uvicorn
 from fastapi import FastAPI
-from datetime import datetime
 
 from app.api.routes import router
 from app.core.config import settings

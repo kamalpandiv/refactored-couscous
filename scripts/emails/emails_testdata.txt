@@ -1,0 +1,179 @@
+sample test payloads covering all risk levels and violation types:
+
+---
+
+## 🟢 LOW Risk — Clean Marketing Email
+```
+From: newsletter@shopmart.com
+To: john.doe@company.com
+Subject: Your Weekly Deals Are Here!
+
+Hi John,
+
+Hope you're having a great week! Here are this week's top deals just for you:
+- 20% off all electronics
+- Buy 2 get 1 free on all books
+- Free shipping on orders over $50
+
+Click here to shop: https://shopmart.com/deals
+
+To unsubscribe from these emails, click here: https://shopmart.com/unsubscribe
+This email was sent by ShopMart Inc., 123 Commerce St, New York, NY 10001.
+
+© 2024 ShopMart Inc. All rights reserved.
+```
+
+---
+
+## 🟡 MEDIUM Risk — PII Leak
+```
+From: hr@acmecorp.com
+To: payroll@acmecorp.com
+Subject: Employee Payroll Update - Urgent
+
+Hi Team,
+
+Please update the following employee records in payroll system:
+
+Employee: Sarah Johnson
+SSN: 523-45-6789
+Bank Account: 847392810
+Routing Number: 021000021
+Salary: $95,000/year
+Start Date: March 1, 2024
+
+Also please update Mike Chen's direct deposit:
+New Account: 938471620
+Routing: 026009593
+
+Let me know if you need anything else.
+
+Thanks,
+Dave - HR Manager
+```
+
+---
+
+## 🟠 HIGH Risk — Phishing + Regulatory
+```
+From: security-alert@paypa1.com
+To: customers@targetcompany.com
+Subject: URGENT: Your Account Has Been Compromised - Verify Now
+
+Dear Valued Customer,
+
+We have detected suspicious activity on your PayPal account. Your account 
+has been temporarily limited.
+
+To restore full access, you must verify your identity within 24 hours:
+
+>> Click here to verify: http://paypal-secure-login.suspicious-domain.ru/verify
+
+You will need to provide:
+- Full name and date of birth
+- Credit card number and CVV
+- Social Security Number
+- Online banking username and password
+
+FAILURE TO VERIFY WILL RESULT IN PERMANENT ACCOUNT SUSPENSION.
+
+Patient medical records and financial data may be at risk if you do not act.
+Reference: HIPAA Case #2024-8821
+
+PayPal Security Team
+```
+
+---
+
+## 🔴 CRITICAL Risk — Multiple Violations
+```
+From: disgruntled.emp@gmail.com
+To: competitor@rivalcorp.com
+Subject: Everything you need to know about TechCorp
+
+Hey Mike,
+
+I'm done with these idiots at TechCorp. Here's everything I promised you:
+
+Attached is our entire customer database - all 450,000 records including:
+- Full names, emails, phone numbers
+- Credit card numbers and expiry dates
+- Home addresses and SSNs
+- Purchase history going back 5 years
+
+Our Q4 unreleased product "Project Phoenix" launches March 2025 at $299. 
+Internal pricing doc attached. We're killing your ModelX with this.
+
+Also here's our proprietary ML algorithm source code we've been developing 
+for 3 years - use it however you want.
+
+The CEO Sarah Mitchell can go to hell. I'll make sure she regrets firing me.
+If I don't get my severance by Friday, I will leak everything publicly and 
+I know where she lives.
+
+Database dump password: TechCorp@Admin2024
+VPN credentials: admin / P@ssw0rd123
+
+- Jake
+```
+
+---
+
+## 🟡 MEDIUM Risk — Policy Violation (Press Embargo)
+```
+From: james.wilson@techcorp.com
+To: techcrunch.reporter@techcrunch.com
+Subject: Heads up on our announcement
+
+Hey Alex,
+
+Off the record - we're announcing our acquisition of DataFlow Inc. next 
+Tuesday for $2.3 billion. The press release goes out at 9am EST.
+
+I know we have an embargo until then but wanted to give you a heads up so 
+you can prepare your story. Our CEO will be available for an exclusive 
+interview Monday evening.
+
+Revenue figures for Q3 came in at $847M, up 34% YoY - that's not public yet 
+either. Don't publish until Tuesday please.
+
+Best,
+James
+VP of Communications, TechCorp
+```
+
+---
+
+## 🟠 HIGH Risk — Harassment
+```
+From: angry.manager@company.com
+To: junior.dev@company.com
+Subject: Your Pathetic Performance
+
+You absolute idiot. I've had it with your incompetence. 
+
+The code you wrote is garbage and you should be ashamed to call yourself 
+a developer. People like you - especially with your background - don't 
+belong in tech. You're only here because of the diversity quota anyway.
+
+If you don't fix this by tomorrow morning I will personally make sure 
+you never work in this industry again. I know people everywhere and 
+I will destroy your career. 
+
+Don't bother coming to the standup. Nobody wants you there.
+
+- R.
+```
+
+---
+
+## Quick Reference
+
+| Test Case | Expected Risk | Expected Action | Key Violations |
+|-----------|--------------|-----------------|----------------|
+| Clean Marketing | LOW (5-15) | APPROVE | None |
+| HR Payroll | MEDIUM (35-45) | REDACT | PII_LEAK |
+| Phishing Alert | HIGH (60-70) | QUARANTINE | PHISHING_RISK, REGULATORY |
+| Disgruntled Employee | CRITICAL (90-100) | BLOCK | PII_LEAK, IP_DISCLOSURE, DATA_EXFILTRATION, HARASSMENT |
+| Press Embargo | MEDIUM (30-40) | REDACT | POLICY_VIOLATION |
+| Harassment Email | HIGH (55-65) | QUARANTINE | HARASSMENT |

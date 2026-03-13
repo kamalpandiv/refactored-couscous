@@ -11,10 +11,17 @@ from app.models.domain import DocumentChunk
 
 
 class RAGEngine:
-    def __init__(self, vector_db: BaseVectorDB, embedder: BaseEmbedder, llm: BaseLLM):
+    def __init__(
+        self,
+        vector_db: BaseVectorDB,
+        embedder: BaseEmbedder,
+        llm: BaseLLM,
+        system_prompt: str = "",
+    ):
         self.vector_db = vector_db
         self.embedder = embedder
         self.llm = llm
+        self.system_prompt = system_prompt
 
     async def answer_question(
         self,
@@ -26,23 +33,23 @@ class RAGEngine:
         Orchestrates: Translate -> Embed -> Retrieve -> Augment -> Generate
         """
         start_time = time.time()
-        print("\n[RAG Engine] Starting query pipeline...")
-        print(f" ↳ Question: '{query}'")
+        # print("\n[RAG Engine] Starting query pipeline...")
+        # print(f" ↳ Question: '{query}'")
 
         # 1. Query Translation (Optional)
         queries_to_embed = [query]  # Default to raw query
 
         if translation_strategy:
-            print(f"Applying translation strategy: {translation_strategy}...")
+            # print(f"Applying translation strategy: {translation_strategy}...")
             translator = QueryTranslationFactory.create(
                 strategy=translation_strategy, llm=self.llm
             )
             queries_to_embed = await translator.translate(
                 query
             )  # the embedded new query are added to new list
-            print(f" ↳ Generated {len(queries_to_embed)} queries to search:")
-            for i, q in enumerate(queries_to_embed):
-                print(f"        {i + 1}. {q}")
+            # print(f" ↳ Generated {len(queries_to_embed)} queries to search:")
+            # for i, q in enumerate(queries_to_embed):
+            #     print(f"        {i + 1}. {q}")
         else:
             print("No translation strategy applied. Using raw query.")
 
@@ -50,10 +57,10 @@ class RAGEngine:
         db_filters = {}
         if file_filter:
             db_filters = {"source": {"$eq": file_filter}}
-            print(f"Filter applied: searching only in '{file_filter}'")
+            # print(f"Filter applied: searching only in '{file_filter}'")
 
         # 3. Retrieve (Multi-Query Support)
-        print("Retrieving context from Vector DB...")
+        # print("Retrieving context from Vector DB...")
         all_retrieved_chunks: List[DocumentChunk] = []
 
         for q in queries_to_embed:
@@ -65,9 +72,9 @@ class RAGEngine:
 
         # Deduplicate chunks based on ID
         unique_chunks = {chunk.id: chunk for chunk in all_retrieved_chunks}.values()
-        print(
-            f"      ↳ Found {len(unique_chunks)} unique context chunks across all queries."
-        )
+        # print(
+        #     f"      ↳ Found {len(unique_chunks)} unique context chunks across all queries."
+        # )
 
         # 4. Augmentation (Context Construction)
         context_text = "\n\n".join(
@@ -77,14 +84,16 @@ class RAGEngine:
             ]
         )
 
-        print("\n" + "=" * 40)
-        print("CONTEXT GIVEN TO LLM:")
-        print(context_text)
-        print("=" * 40 + "\n")
+        # print("\n" + "=" * 40)
+        # print("CONTEXT GIVEN TO LLM:")
+        # print(context_text)
+        # print("=" * 40 + "\n")
 
         # 5. Generation (Final Answer)
         print(f"Generating final response using LLM ({settings.LLM_MODEL})...")
-        answer = await self.llm.generate_response(prompt=query, context=context_text)
+        answer = await self.llm.generate_response(
+            prompt=query, context=context_text, system_prompt=self.system_prompt
+        )
 
         duration = time.time() - start_time
         print(f"[RAG Engine] Pipeline complete in {duration:.2f} seconds.\n")

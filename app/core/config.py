@@ -1,52 +1,67 @@
-import os
-
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# 1. Force load the .env file immediately
+# Load .env early (optional but safe)
 load_dotenv()
 
 
 class Settings(BaseSettings):
-    APP_HOST: str = os.getenv("APP_HOST", "")
-    APP_PORT: int = int(os.getenv("APP_PORT", ""))
-    APP_WORKERS: int = int(os.getenv("APP_WORKERS", ""))
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    # =========================
+    # App Settings
+    # =========================
+    APP_HOST: str = "0.0.0.0"
+    APP_PORT: int = 8000
+    APP_WORKERS: int = 1
     APP_RELOAD: bool = True
     DEBUG: bool = True
     USE_LOCAL_DB: bool = True
 
+    # =========================
     # API Keys
-    # We use os.getenv to fetch the values loaded above
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-    PINECONE_API_KEY: str = os.getenv("PINECONE_API_KEY", "")
+    # =========================
+    OPENAI_API_KEY: str = ""
+    PINECONE_API_KEY: str = ""
+
+    # =========================
+    # Database
+    # =========================
     DATABASE_URL: str = "postgresql://postgres:123456@localhost:5432/rag_db"
 
-    # Model Settings
-    EMBEDDING_MODEL: str = "text-embedding-3-small"
+    # =========================
+    # LLM Settings
+    # =========================
     LOCAL_MODEL: str = "models/Hermes-2-Pro-Llama-3-8B.Q4_K_M.gguf"
-    EMBEDDING_MODEL_MAX_TOKEN: int = 8000
     LLM_MODEL: str = "gpt-4o-mini"
     LLM_TEMP: float = 0.3
 
-    # NEW: Central source of truth for vector size
-    # Options: 1536 (default), 512 (faster), 1024, 3072 (large model)
+    # =========================
+    # Embeddings
+    # =========================
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
     EMBEDDING_DIMENSION: int = 512
-    ENABLE_TABLE_PARSING: bool = True
-    CHUNKING_STRATEGY: str = "recursive"  # use recursive or semantic
+    EMBEDDING_MODEL_MAX_TOKEN: int = 8000
 
-    # Pinecone Settings
+    # =========================
+    # Retrieval / RAG
+    # =========================
+    SYSTEM_PROMPT_FILE: str = "can_spam"
+    CHUNKING_STRATEGY: str = "recursive"
+    ENABLE_TABLE_PARSING: bool = True
+    TOP_K: int = 10
+
+    # =========================
+    # Pinecone
+    # =========================
     INDEX_NAME: str = "semantic-search-openai"
     CLOUD: str = "aws"
     REGION: str = "us-east-1"
 
-    # Processing Settings
+    # =========================
+    # Processing
+    # =========================
     BATCH_SIZE: int = 32
-    TOP_K: int = 10
-
-    # Tells Pydantic to read from .env if it can't find keys
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
 
 settings = Settings()
