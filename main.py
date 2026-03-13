@@ -6,7 +6,10 @@ from app.core.config import settings
 
 # Initialize FastAPI
 app = FastAPI(
-    title="RAG Framework API", description="Modular RAG engine", version="1.0.0"
+    title="RAG Framework API",
+    description="Modular RAG engine",
+    version="1.0.0",
+    debug=settings.DEBUG,
 )
 
 # Include the routes we defined above
@@ -32,4 +35,5 @@ if __name__ == "__main__":
         port=settings.APP_PORT,
         reload=settings.APP_RELOAD,
         workers=settings.APP_WORKERS,
+        log_level="debug",
     )

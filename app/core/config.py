@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     APP_HOST: str = os.getenv("APP_HOST", "")
     APP_PORT: int = int(os.getenv("APP_PORT", ""))
     APP_WORKERS: int = int(os.getenv("APP_WORKERS", ""))
-    APP_RELOAD: bool = False
+    APP_RELOAD: bool = True
+    DEBUG: bool = True
     USE_LOCAL_DB: bool = True
 
     # API Keys
@@ -40,7 +41,7 @@ class Settings(BaseSettings):
 
     # Processing Settings
     BATCH_SIZE: int = 32
-    TOP_K: int = 8
+    TOP_K: int = 10
 
     # Tells Pydantic to read from .env if it can't find keys
     class Config:
