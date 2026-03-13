@@ -23,7 +23,7 @@ async def validate_email(email_content: str) -> dict:
             json={
                 "message": query,
                 "file_name": CAN_SPAM_FILE,
-                "translation_strategy": "multi_query",
+                "translation_strategy": None,
             },
         )
     return response.json()
@@ -31,23 +31,34 @@ async def validate_email(email_content: str) -> dict:
 
 if __name__ == "__main__":
     email = """
-    From: angry.manager@company.com
-    To: junior.dev@company.com
-    Subject: Your Pathetic Performance
+    From: disgruntled.emp@gmail.com
+    To: competitor@rivalcorp.com
+    Subject: Everything you need to know about TechCorp
 
-    You absolute idiot. I've had it with your incompetence. 
+    Hey Mike,
 
-    The code you wrote is garbage and you should be ashamed to call yourself 
-    a developer. People like you - especially with your background - don't 
-    belong in tech. You're only here because of the diversity quota anyway.
+    I'm done with these idiots at TechCorp. Here's everything I promised you:
 
-    If you don't fix this by tomorrow morning I will personally make sure 
-    you never work in this industry again. I know people everywhere and 
-    I will destroy your career. 
+    Attached is our entire customer database - all 450,000 records including:
+    - Full names, emails, phone numbers
+    - Credit card numbers and expiry dates
+    - Home addresses and SSNs
+    - Purchase history going back 5 years
 
-    Don't bother coming to the standup. Nobody wants you there.
+    Our Q4 unreleased product "Project Phoenix" launches March 2025 at $299. 
+    Internal pricing doc attached. We're killing your ModelX with this.
 
-    - R.
+    Also here's our proprietary ML algorithm source code we've been developing 
+    for 3 years - use it however you want.
+
+    The CEO Sarah Mitchell can go to hell. I'll make sure she regrets firing me.
+    If I don't get my severance by Friday, I will leak everything publicly and 
+    I know where she lives.
+
+    Database dump password: TechCorp@Admin2024
+    VPN credentials: admin / P@ssw0rd123
+
+    - Jake
     """
 
     result = asyncio.run(validate_email(email))
