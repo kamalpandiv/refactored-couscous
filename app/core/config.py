@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     # =========================
     LOCAL_MODEL: str = "models/Hermes-2-Pro-Llama-3-8B.Q4_K_M.gguf"
     LLM_MODEL: str = "gpt-4o-mini"
-    LLM_TEMP: float = 0.3
+    LLM_TEMP: float = 0
 
     # =========================
     # Embeddings
