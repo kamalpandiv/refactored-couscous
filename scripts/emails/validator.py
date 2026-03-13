@@ -5,7 +5,7 @@ import httpx
 
 RAG_API_URL = "http://localhost:8000/api/v1/query"
 CAN_SPAM_FILE = (
-    "CAN-SPAM_Act__A_Compliance_Guide_for_Business___Federal_Trade_Commission.pdf"
+    "can-spam_complance_checklist.pdf" #CAN-SPAM_Act__A_Compliance_Guide_for_Business___Federal_Trade_Commission.pdf
 )
 
 
