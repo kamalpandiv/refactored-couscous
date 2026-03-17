@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from app.components.loaders.pdf_loader import parse_pdf
 from app.components.loaders.web_loader import parse_url
 from app.components.query_translation import QueryTranslationStrategyType
-from app.core.dependencies import get_ingestion_service, get_rag_engine
+from app.core.dependencies import get_ingestion_service, get_rag_engine, load_prompt
 
 router = APIRouter()
 
@@ -25,6 +25,7 @@ class ChatRequest(BaseModel):
     file_name: Optional[str] = None
     # Allow users to specify the strategy (e.g., "multi_query", "hyde")
     translation_strategy: Optional[QueryTranslationStrategyType] = None
+    prompt_name: Optional[str] = None 
 
 
 # --- Endpoints ---
@@ -37,6 +38,8 @@ async def query_knowledge_base(request: ChatRequest, engine=Depends(get_rag_engi
     If 'file_name' is provided, it only searches inside that specific file.
     If 'translation_strategy' is provided, it applies that strategy.
     """
+    if request.prompt_name:
+        engine.system_prompt = load_prompt(request.prompt_name)
     result = await engine.answer_question(
         query=request.message,
         file_filter=request.file_name,

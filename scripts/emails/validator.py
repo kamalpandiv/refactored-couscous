@@ -23,6 +23,7 @@ async def validate_email(email_content: str) -> dict:
                 "message": query,
                 "file_name": CAN_SPAM_FILE,
                 "translation_strategy": None,
+                "prompt_name": "can_spam"
             },
         )
     return response.json()

@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # =========================
     # Retrieval / RAG
     # =========================
-    SYSTEM_PROMPT_FILE: str = "can_spam"
+    SYSTEM_PROMPT_FILE: str = "default"
     CHUNKING_STRATEGY: str = "recursive"
     ENABLE_TABLE_PARSING: bool = True
     TOP_K: int = 10
