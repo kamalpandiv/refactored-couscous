@@ -1,7 +1,14 @@
+"""
+Module for the RAG Framework API.
+
+This module initializes the FastAPI application and includes the necessary routes.
+"""
+
 from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import settings
@@ -13,7 +20,13 @@ app = FastAPI(
     version="1.0.0",
     debug=settings.DEBUG,
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Vite's default dev port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Include the routes we defined above
 app.include_router(router, prefix="/api/v1")
 
@@ -21,6 +34,11 @@ app.include_router(router, prefix="/api/v1")
 # Root endpoint for health check
 @app.get("/")
 def health_check():
+    """
+    Health check endpoint.
+
+    Returns the health status of the application along with the current timestamp and configuration settings.
+    """
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
@@ -56,13 +74,10 @@ def health_check():
 
 
 if __name__ == "__main__":
-    # Run the server
-    # Host 0.0.0.0 makes it accessible on your local network
     uvicorn.run(
         "main:app",
         host=settings.APP_HOST,
         port=settings.APP_PORT,
         reload=settings.APP_RELOAD,
         workers=settings.APP_WORKERS,
-        log_level="debug",
     )
