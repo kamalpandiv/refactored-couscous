@@ -5,15 +5,10 @@ from .base import BaseQueryTranslator
 
 class HydeTranslator(BaseQueryTranslator):
     async def translate(self, query: str) -> List[str]:
-        system_task = "You are a helpful assistant. Write a hypothetical scientific paper passage to answer the question."
-
-        prompt = f"""
-        Question: {query}
-        Passage:
-        """
+        prompt = self.user_prompt_template.format(query=query)
 
         hypothetical_doc = await self.llm.generate_response(
-            prompt=prompt, context="", system_prompt=system_task
+            prompt=prompt, context="", system_prompt=self.system_prompt
         )
 
         return [hypothetical_doc.strip()]

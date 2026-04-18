@@ -61,7 +61,8 @@ graph LR
 - **[+] Local LLM Support:** Native integration with `llama-cpp-python` for running quantized models (GGUF) on CPU/Apple Silicon.
 - **[+] Async Wrapper:** Runs synchronous local inference in non-blocking threads to keep the API responsive.
 - **[+] Centralized Dependency Injection:** All FastAPI dependencies live in `core/dependencies.py` — zero wiring logic in route files.
-- **[+] Domain-Specific System Prompts:** Load per-domain prompts from `app/prompts/` via a single `SYSTEM_PROMPT_FILE` env variable. No hardcoded prompts in code.
+- **[+] Domain-Specific System Prompts:** Load per-domain prompts from `app/prompts/system/` via a single `SYSTEM_PROMPT_FILE` env variable. No hardcoded prompts in code.
+- **[+] Frontend Configuration:** Dedicated `/api/v1/config` endpoint to expose non-sensitive backend settings to clients.
 - **[+] External App Support:** The RAG system exposes a clean HTTP API, allowing external validator scripts or services to use ingested knowledge without modifying the core.
 
 ## Getting Started
@@ -185,13 +186,17 @@ curl -X POST "http://localhost:8000/api/v1/query" \
 
 ## Domain-Specific System Prompts
 
-The RAG engine supports swappable system prompts loaded from `app/prompts/`. This allows you to repurpose the same RAG system for different compliance domains, assistants, or use cases — without changing any code.
+The RAG engine supports swappable system prompts loaded from `app/prompts/system/`. This allows you to repurpose the same RAG system for different compliance domains, assistants, or use cases — without changing any code.
 
 ```
 app/prompts/
-├── default.txt       # General-purpose assistant
-├── can_spam.txt      # CAN-SPAM Act compliance validator
-└── gdpr.txt          # Add your own domains
+├── system/
+│   ├── default.txt       # General-purpose assistant
+│   ├── can_spam.txt      # CAN-SPAM Act compliance validator
+│   └── ...
+└── user/
+    ├── multi_query.txt   # User prompts for translation strategies
+    └── ...
 ```
 
 To switch domains, update your `.env`:
@@ -253,27 +258,29 @@ The codebase uses a **Modular Component Architecture** to facilitate easy contri
 ```text
 rag-framework/
 ├── app/
-│   ├── api/             # API Routes (HTTP only, no business logic)
+│   ├── api/             # Modular API Layer
+│   │   └── v1/
+│   │       ├── endpoints/
+│   │       │   ├── config.py
+│   │       │   ├── ingest.py
+│   │       │   └── query.py
+│   │       └── api.py   # API Orchestrator
 │   ├── components/      # Interchangeable Modules
-│   │   ├── chunking/    # Modular Chunking Strategies
-│   │   │   ├── base.py
-│   │   │   ├── factory.py
-│   │   │   ├── recursive.py
-│   │   │   ├── semantic.py
-│   │   │   └── safety.py    # Token limit enforcer
-│   │   ├── embedders/   # OpenAI / Local Embedders
-│   │   ├── loaders/     # PDF Plumber (Crop & Stitch logic)
-│   │   ├── vector_dbs/  # Dynamic Table Factory
-│   │   └── llms/        # BaseLLM, OpenAILLM, LocalLlamaLLM
+...
 │   ├── core/            # Config, Interfaces & Dependencies
 │   │   ├── config.py
 │   │   ├── interfaces.py
 │   │   ├── dependencies.py  # Centralized FastAPI Depends()
 │   │   └── prompt_loader.py # Loads prompts from app/prompts/
-│   ├── models/          # Database Models (Dynamic)
-│   ├── prompts/         # Swappable system prompt files (.txt)
-│   │   ├── default.txt
-│   │   └── can_spam.txt
+│   ├── models/          # Data Models (API & Frontend Config)
+│   │   ├── api_requests.py
+│   │   ├── api_response.py
+│   │   ├── frontend_config.py
+│   │   └── ...
+
+│   ├── prompts/         # Swappable system/user prompt files (.txt)
+│   │   ├── system/
+│   │   └── user/
 │   └── services/        # Orchestration (Ingestion, RAG Engine)
 ├── scripts/             # Standalone external consumer scripts
 │   └── emails/
