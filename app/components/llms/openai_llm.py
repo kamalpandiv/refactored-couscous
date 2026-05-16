@@ -15,7 +15,7 @@ class OpenAILLM(BaseLLM):
         self,
         prompt: str,
         context: str,
-        system_prompt: Optional[str] = None,  # NEW: Allow override
+        system_prompt: Optional[str] = None,
     ) -> str:
 
         # Default Strict RAG Prompt (used if no override is provided)
@@ -43,4 +43,10 @@ class OpenAILLM(BaseLLM):
             if not system_prompt
             else 0.7,  # Higher temp for creative tasks
         )
-        return response.choices[0].message.content
+
+        content = response.choices[0].message.content
+
+        if content is None:
+            raise ValueError("OpenAI model returned an empty or invalid text response.")
+
+        return content

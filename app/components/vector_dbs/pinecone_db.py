@@ -1,7 +1,7 @@
 import time
-from typing import Dict, List
+from typing import Any, Dict, List, Optional, cast
 
-from pinecone import ServerlessSpec
+from pinecone import ServerlessSpec, Vector
 from pinecone.grpc import PineconeGRPC as Pinecone
 
 from app.core.config import settings
@@ -11,79 +11,91 @@ from app.models.domain import DocumentChunk
 
 class PineconeDB(BaseVectorDB):
     def __init__(self):
-        # 1. Use the new PINECONE_API_KEY from settings
         self.pc = Pinecone(api_key=settings.PINECONE_API_KEY)
-
-        # 2. Update to new config variable name: PINECONE_INDEX_NAME
         self.index_name = settings.PINECONE_INDEX_NAME
-
         self._initialize_index()
         self.index = self.pc.Index(self.index_name)
 
     def _initialize_index(self):
-        # check if index exists
         existing_indexes = [i.name for i in self.pc.list_indexes()]
 
         if self.index_name not in existing_indexes:
-            # 3. Use unified settings for Cloud and Region
-            spec = ServerlessSpec(
-                cloud=settings.PINECONE_CLOUD, region=settings.PINECONE_REGION
-            )
+            spec = ServerlessSpec(cloud=settings.CLOUD, region=settings.REGION)
 
             self.pc.create_index(
                 name=self.index_name,
-                # 4. Use the unified EMBEDDING_DIMENSION (e.g. 1536 or 512)
                 dimension=settings.EMBEDDING_DIMENSION,
-                metric="cosine",  # Recommend 'cosine' over 'dotproduct' for OpenAI v3
+                metric="cosine",
                 spec=spec,
             )
-            # Wait a moment for the index to be ready
-            while not self.pc.describe_index(self.index_name).status["ready"]:
+
+            while True:
+                description = self.pc.describe_index(self.index_name)
+
+                if (
+                    description is not None
+                    and description.status is not None
+                    and description.status.ready is True
+                ):
+                    break
                 time.sleep(1)
 
     async def upsert(self, chunks: List[DocumentChunk], embeddings: List[List[float]]):
-
         if len(chunks) != len(embeddings):
             raise ValueError("Number of chunks and embeddings must match!")
 
-        vectors = []
+        vectors: List[Vector] = []
 
-        # Loop through both lists at the same time using zip()
         for chunk, embedding in zip(chunks, embeddings):
-            # Ensure metadata is a flat dict (Pinecone requirement)
-            meta = chunk.metadata.copy() if chunk.metadata else {}
+            meta: dict[str, float | int | list[float] | list[int] | list[str] | str] = (
+                chunk.metadata.copy() if chunk.metadata else {}
+            )
             meta["text"] = chunk.text
 
-            # Pass the paired 'embedding' here, not 'chunk.vector'
-            vectors.append((chunk.id, embedding, meta))
+            vectors.append(
+                Vector(
+                    id=chunk.id,
+                    values=embedding,
+                    metadata=meta,
+                )
+            )
 
-        # Upsert in batches
         self.index.upsert(vectors=vectors)
 
     async def search(
-        self, query_vector: List[float], top_k: int, filters: Dict = None
+        self,
+        query_vector: List[float],
+        top_k: int,
+        filters: Optional[Dict[str, Any]] = None,
     ) -> List[DocumentChunk]:
-        # Validate dimension match
         if len(query_vector) != settings.EMBEDDING_DIMENSION:
             raise ValueError(
                 f"Query vector size {len(query_vector)} does not match Index dimension {settings.EMBEDDING_DIMENSION}"
             )
 
-        res = self.index.query(
-            vector=query_vector, top_k=top_k, include_metadata=True, filter=filters
+        # 1. Execute the query
+        raw_res = self.index.query(
+            vector=query_vector,
+            top_k=top_k,
+            include_metadata=True,
+            filter=filters,
         )
 
+        # FIX: Scrub the Union type using cast.
+        # This forces the linter to treat it dynamically and bypasses the Catch-22 error completely.
+        res = cast(Any, raw_res)
+
         results = []
-        for match in res["matches"]:
-            # Safely get text, defaulting to empty string if missing
-            text_content = match["metadata"].get("text", "")
+        for match in res.matches:
+            metadata = match.metadata if match.metadata is not None else {}
+            text_content = str(metadata.get("text", ""))
 
             results.append(
                 DocumentChunk(
-                    id=match["id"],
+                    id=str(match.id),
                     text=text_content,
-                    metadata=match["metadata"],
-                    score=match["score"],
+                    metadata=dict(metadata),
+                    score=float(match.score) if match.score is not None else 0.0,
                 )
             )
         print("[Pinecone Search]")

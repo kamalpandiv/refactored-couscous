@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 from app.models.domain import DocumentChunk
 
@@ -22,13 +22,18 @@ class BaseVectorDB(ABC):
 
     @abstractmethod
     async def search(
-        self, query_vector: List[float], top_k: int, filters: Dict = None
+        self,
+        query_vector: List[float],
+        top_k: int,
+        filters: Dict[str, Any] | None = None,
     ) -> List[DocumentChunk]:
         pass
 
 
 class BaseLLM(ABC):
     @abstractmethod
-    async def generate_response(self, prompt: str, context: str) -> str:
+    async def generate_response(
+        self, prompt: str, context: str, system_prompt: Optional[str] = None
+    ) -> str:
         """Generates the final answer based on prompt and context."""
         pass

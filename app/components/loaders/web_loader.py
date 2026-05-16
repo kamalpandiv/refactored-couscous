@@ -1,8 +1,8 @@
-import requests
+import httpx
 from bs4 import BeautifulSoup
 
 
-def parse_url(url: str) -> str:
+async def parse_url(url: str) -> str:
     """
     Fetches a URL and returns the text content.
     Includes headers to mimic a real browser to avoid 403 errors.
@@ -12,9 +12,9 @@ def parse_url(url: str) -> str:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
-
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
 
         soup = BeautifulSoup(response.content, "html.parser")
 

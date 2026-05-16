@@ -1,4 +1,5 @@
 import psycopg
+from psycopg.sql import SQL, Identifier
 
 from app.core.config import settings
 
@@ -16,7 +17,9 @@ def reset_vector_table():
         # table_name = "rag_vectors"
 
         print(f"Dropping table: {table_name}")
-        conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+        conn.execute(
+            SQL("DROP TABLE IF EXISTS {table}").format(table=Identifier(table_name))
+        )
 
         print("Table dropped. Restart your app to recreate it with new dimensions.")
 

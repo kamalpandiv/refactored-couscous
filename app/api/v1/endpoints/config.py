@@ -25,7 +25,7 @@ async def get_frontend_config():
         CHUNKING_STRATEGY=settings.CHUNKING_STRATEGY,
         ENABLE_TABLE_PARSING=settings.ENABLE_TABLE_PARSING,
         TOP_K=settings.TOP_K,
-        INDEX_NAME=settings.INDEX_NAME,
+        INDEX_NAME=settings.PINECONE_INDEX_NAME,
         CLOUD=settings.CLOUD,
         REGION=settings.REGION,
         BATCH_SIZE=settings.BATCH_SIZE,

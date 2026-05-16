@@ -4,7 +4,7 @@ Module for the RAG Framework API.
 This module initializes the FastAPI application and includes the necessary routes.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import uvicorn
 from fastapi import FastAPI
@@ -41,7 +41,7 @@ def health_check():
     """
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "app": {
             "host": settings.APP_HOST,
             "port": settings.APP_PORT,
@@ -66,7 +66,9 @@ def health_check():
         },
         "vector_db": {
             "provider": "pgvector" if settings.USE_LOCAL_DB else "pinecone",
-            "index_name": settings.INDEX_NAME if not settings.USE_LOCAL_DB else None,
+            "index_name": settings.PINECONE_INDEX_NAME
+            if not settings.USE_LOCAL_DB
+            else None,
             "cloud": settings.CLOUD if not settings.USE_LOCAL_DB else None,
             "region": settings.REGION if not settings.USE_LOCAL_DB else None,
         },

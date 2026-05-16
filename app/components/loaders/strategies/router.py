@@ -1,4 +1,4 @@
-import pdfplumber
+import pdfplumber.page
 
 from app.core.config import settings
 

@@ -1,4 +1,4 @@
-import pdfplumber
+import pdfplumber.page
 
 from .base import PageStrategy
 

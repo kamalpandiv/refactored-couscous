@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -49,14 +50,14 @@ class Settings(BaseSettings):
     # Retrieval / RAG
     # =========================
     SYSTEM_PROMPT_FILE: str = "default"
-    CHUNKING_STRATEGY: str = "recursive"
+    CHUNKING_STRATEGY: Literal["paragraph", "recursive", "semantic"] = "recursive"
     ENABLE_TABLE_PARSING: bool = True
     TOP_K: int = 10
 
     # =========================
     # Pinecone
     # =========================
-    INDEX_NAME: str = "semantic-search-openai"
+    PINECONE_INDEX_NAME: str = "semantic-search-openai"
     CLOUD: str = "aws"
     REGION: str = "us-east-1"
 

@@ -24,7 +24,7 @@ class ChunkingFactory:
     @staticmethod
     def create(
         strategy: ChunkingStrategyType,
-        embedder: Embeddings = None,
+        embedder: Embeddings | None = None,
         token_safe: bool = True,
     ):
         # 1. Select the Base Strategy

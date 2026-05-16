@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-import pdfplumber
+import pdfplumber.page
 
 
 class PageStrategy(ABC):

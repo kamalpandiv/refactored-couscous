@@ -1,8 +1,17 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+    status,
+)
+
 from app.components.loaders.pdf_loader import parse_pdf
-from app.models.api_requests import IngestRequest, UrlIngestRequest
 from app.components.loaders.web_loader import parse_url
 from app.core.dependencies import get_ingestion_service
+from app.models.api_requests import IngestRequest, UrlIngestRequest
 from app.models.api_response import IngestResponse
 
 router = APIRouter()
@@ -18,7 +27,15 @@ async def ingest_file(
     Upload a PDF or TXT file to ingest.
     The processing happens asynchronously in the background.
     """
+
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Filename is missing from the uploaded folder",
+        )
+
     text = ""
+
     if file.filename.endswith(".pdf"):
         text = await parse_pdf(file)
     elif file.filename.endswith(".txt"):
