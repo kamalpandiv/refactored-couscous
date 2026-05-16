@@ -79,4 +79,4 @@ class IngestionService:
         await self.vector_db.upsert(all_chunks, vectors)
 
         duration = time.time() - start_time
-        print(f"Done] Ingestion finished in {duration:.2f}s.")
+        print(f"Done Ingestion finished in {duration:.2f}s.")

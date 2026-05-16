@@ -62,14 +62,11 @@ async def ingest_url(
     request: UrlIngestRequest,
     service=Depends(get_ingestion_service),
 ):
-    """
-    Scrape a website and ingest the text.
-    The processing happens asynchronously in the background.
-    """
-    text = parse_url(request.url)
+    """Scrape a website and ingest the text in the background."""
+    text = await parse_url(request.url)
 
     if not text:
-        return {"error": "Could not extract text from URL"}
+        raise HTTPException(status_code=400, detail="Could not extract text from URL")
 
     background_tasks.add_task(
         service.ingest_texts,
@@ -77,7 +74,12 @@ async def ingest_url(
         source_name=request.url,
     )
 
-    return IngestResponse(url=request.url, status="Ingestion started in background")
+    return IngestResponse(
+        url=request.url,
+        filename=request.url,
+        status="Processing started in background so No COUNTS!!!",
+        count=None,
+    )
 
 
 @router.post(

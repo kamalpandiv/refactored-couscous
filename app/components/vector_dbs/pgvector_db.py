@@ -88,7 +88,7 @@ class PGVectorDB(BaseVectorDB):
         # 1. Base query selection (Placeholder 1: %s for calculating score)
         base_query: List[Union[SQL, Composed]] = [
             SQL(
-                "SELECT id, text, metadata, 1 - (embedding <=> %s) AS score FROM {table}"
+                "SELECT id, text, metadata, 1 - (embedding <=> %s::vector) AS score FROM {table}"
             ).format(table=Identifier(self.table_name))
         ]
         params: List[Any] = [query_vector]
@@ -101,7 +101,7 @@ class PGVectorDB(BaseVectorDB):
                 params.append(source_file)
 
         # 3. Dynamic ordering block (Placeholders 3 & 4: %s for HNSW evaluation, %s for limit integer)
-        base_query.append(SQL("ORDER BY embedding <=> %s LIMIT %s"))
+        base_query.append(SQL("ORDER BY embedding <=> %s::vector LIMIT %s"))
         params.extend([query_vector, top_k])
 
         # FIX: Join exactly once, and execute safely. No duplicate parameter extensions.
