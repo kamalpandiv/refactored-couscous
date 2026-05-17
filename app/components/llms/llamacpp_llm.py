@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from typing import AsyncIterator
 
 import httpx
@@ -21,19 +22,27 @@ class LlamaCppProvider(BaseLLMProvider):
                 f"[LlamaCppProvider] Remote URL found: {self.remote_url}. Testing connection..."
             )
 
+            # Built-in connection checking function
             if self._check_connection():
-                print(" ↳Connection successful! Skipping local RAM allocation.")
+                print(" ↳ Connection successful! Skipping local RAM allocation.")
                 self._llm = None
             else:
-                print(" ↳Connection failed! Remote server is down or unreachable.")
-                print(" ↳Falling back: Loading local model into RAM...")
-                self.remote_url = None 
+                print(" ↳ Connection failed! Remote server is down or unreachable.")
+                print(" ↳ Falling back: Loading local model into RAM...")
+                self.remote_url = None
                 self._init_local_llm()
         else:
             print("[LlamaCppProvider] No remote URL configured.")
             self._init_local_llm()
 
     def _init_local_llm(self):
+        # Prevent generic C++ wrapper crashes if the file path is broken
+        if not settings.LOCAL_MODEL or not os.path.exists(settings.LOCAL_MODEL):
+            raise FileNotFoundError(
+                f"Initialization Failed: Remote server was unreachable and "
+                f"local model file does not exist at path: '{settings.LOCAL_MODEL}'"
+            )
+
         print(f"Loading local model into RAM: {settings.LOCAL_MODEL}")
         self._llm = LlamaCpp(
             model_path=settings.LOCAL_MODEL,
@@ -50,11 +59,8 @@ class LlamaCppProvider(BaseLLMProvider):
     def _check_connection(self) -> bool:
         """Performs a synchronous ping to the llama.cpp server health endpoint."""
         try:
-            # We use a strict, short timeout (e.g., 3 seconds) for startup health checks
             with httpx.Client(timeout=3.0) as client:
                 response = client.get(f"{self.remote_url}/health")
-
-                # llama.cpp server returns {"status": "ok"} when healthy
                 if response.status_code == 200:
                     status_data = response.json()
                     return status_data.get("status") == "ok"
@@ -89,12 +95,27 @@ class LlamaCppProvider(BaseLLMProvider):
                 "stop": ["<|im_end|>", "<|im_start|>", " assistant"],
             }
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(
-                    f"{self.remote_url}/completion", json=payload
-                )
-                response.raise_for_status()
-                content = response.json()["content"]
-                return LLMResponse(content=content, model="remote-llamacpp")
+                try:
+                    response = await client.post(
+                        f"{self.remote_url}/completion", json=payload
+                    )
+                    response.raise_for_status()
+                    content = response.json()["content"]
+                    return LLMResponse(content=content, model="remote-llamacpp")
+                except httpx.HTTPStatusError as e:
+                    server_error_text = ""
+                    try:
+                        # Extract the exact message: "request (2261 tokens) exceeds..."
+                        server_error_text = f" | Server Message: {e.response.json()['error']['message']}"
+                    except Exception:
+                        server_error_text = f" | Details: {e.response.text}"
+
+                    print(
+                        f"[LlamaCppProvider] Remote API Error: {e}{server_error_text}"
+                    )
+                    raise RuntimeError(
+                        f"Remote LLM Server returned error status {e.response.status_code}.{server_error_text}"
+                    )
 
         # --- LOCAL PATH ---
         if self._llm is None:

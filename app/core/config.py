@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # =========================
     # LLM Settings
     # =========================
-    LLM_PROVIDER: Literal["openai", "ollama", "llamacpp"] = "openai"
+    LLM_PROVIDER: Literal["openai", "ollama", "llamacpp"] = "llamacpp"
     LOCAL_MODEL: str = "models/Hermes-2-Pro-Llama-3-8B.Q4_K_M.gguf"
     LLM_MODEL: str = "gpt-4o-mini"
     OLLAMA_MODEL: str = "llama3"
