@@ -1,37 +1,210 @@
+import asyncio
+import random
+import re
+from typing import Optional
+from urllib.parse import urljoin, urlparse
+from urllib.robotparser import RobotFileParser
+
 import httpx
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
+
+from app.models.web_loader import ScrapeResult
+
+# ── Rotate through realistic browser fingerprints ──────────────────────────────
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0",
+]
+
+# Tags that are never useful content
+JUNK_TAGS = [
+    "script",
+    "style",
+    "noscript",
+    "nav",
+    "footer",
+    "header",
+    "aside",
+    "form",
+    "button",
+    "svg",
+    "img",
+    "iframe",
+    "ads",
+    "advertisement",
+    "cookie-banner",
+    "popup",
+]
+
+# ── robots.txt cache (per-domain, per-session) ─────────────────────────────────
+_robots_cache: dict[str, RobotFileParser] = {}
 
 
-async def parse_url(url: str) -> str:
+def _build_headers(url: str) -> dict:
+    parsed = urlparse(url)
+    return {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        # "Accept-Encoding" removed — let httpx manage this transparently
+        "Referer": f"{parsed.scheme}://{parsed.netloc}/",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-User": "?1",
+        "Cache-Control": "max-age=0",
+    }
+
+
+def _is_allowed_by_robots(url: str, user_agent: str = "*") -> bool:
+    """Check robots.txt. Returns True (allow) if robots.txt is unreachable."""
+    parsed = urlparse(url)
+    base = f"{parsed.scheme}://{parsed.netloc}"
+    if base not in _robots_cache:
+        rp = RobotFileParser()
+        rp.set_url(urljoin(base, "/robots.txt"))
+        try:
+            rp.read()
+        except Exception:
+            return True  # Assume allowed if we can't fetch robots.txt
+        _robots_cache[base] = rp
+    return _robots_cache[base].can_fetch(user_agent, url)
+
+
+def _extract_main_content(soup: BeautifulSoup) -> Tag:
     """
-    Fetches a URL and returns the text content.
-    Includes headers to mimic a real browser to avoid 403 errors.
+    Prioritise semantic content containers before falling back to <body>.
+    Tries: <main>, <article>, role="main", common CMS div IDs.
     """
-    try:
-        # UPDATED: Headers to look like a standard Chrome browser
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        }
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, headers=headers, timeout=10)
-            response.raise_for_status()
+    # Priority order for content discovery
+    candidates = [
+        soup.find("main"),
+        soup.find("article"),
+        soup.find(attrs={"role": "main"}),
+        soup.find(id=re.compile(r"(content|main|article|post|body)", re.I)),
+        soup.find(class_=re.compile(r"(content|main|article|post|body)", re.I)),
+        soup.body,
+    ]
+    result = next((c for c in candidates if c), soup)
+    if result is None:
+        return soup
+    return result
 
-        soup = BeautifulSoup(response.content, "html.parser")
 
-        # Remove script, style, and other non-content elements
-        for script in soup(["script", "style", "nav", "footer", "header", "aside"]):
-            script.decompose()
+def _clean_text(raw: str) -> str:
+    """Collapse whitespace, remove zero-width chars, deduplicate blank lines."""
+    # Strip NUL bytes — PostgreSQL text fields reject \x00 entirely
+    raw = raw.replace("\x00", "")
+    # Strip zero-width / invisible unicode characters
+    raw = re.sub(r"[\u200b\u200c\u200d\ufeff\xa0]", " ", raw)
+    # Collapse runs of spaces / tabs within a line
+    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in raw.splitlines()]
+    # Remove duplicate consecutive blank lines
+    cleaned, prev_blank = [], False
+    for line in lines:
+        is_blank = line == ""
+        if not (is_blank and prev_blank):
+            cleaned.append(line)
+        prev_blank = is_blank
+    return "\n".join(cleaned).strip()
 
-        # Get text
-        text = soup.get_text()
 
-        # Clean up whitespace (remove empty lines and extra spaces)
-        lines = (line.strip() for line in text.splitlines())
-        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-        clean_text = "\n".join(chunk for chunk in chunks if chunk)
+def _extract_metadata(soup: BeautifulSoup) -> dict[str, str]:
+    """Pull title, description, OG tags — useful context for downstream consumers."""
+    meta = {}
+    if soup.title:
+        meta["title"] = soup.title.get_text(strip=True)
+    for tag in soup.find_all("meta"):
+        name = tag.get("name") or tag.get("property") or ""
+        content = tag.get("content", "")
+        if not isinstance(name, str) or not isinstance(content, str):
+            continue
+        if name in ("description", "og:description", "og:title", "og:type"):
+            meta[name.replace("og:", "")] = content
+    return meta
 
-        return clean_text
 
-    except Exception as e:
-        print(f"Error scraping {url}: {e}")
-        return ""
+async def parse_url(
+    url: str,
+    *,
+    timeout: float = 20.0,
+    max_retries: int = 3,
+    retry_delay: float = 1.5,
+    respect_robots: bool = True,
+    proxy: Optional[str] = None,
+    cookies: Optional[dict] = None,
+    junk_tags: list[str] = JUNK_TAGS,
+) -> ScrapeResult:
+    empty = ScrapeResult(text="", url=url)
+
+    if respect_robots and not _is_allowed_by_robots(url):
+        print(f"[robots.txt] Blocked: {url}")
+        return empty
+
+    client_kwargs: dict = {
+        "timeout": httpx.Timeout(timeout),
+        "follow_redirects": True,
+        "headers": _build_headers(url),
+    }
+    if proxy:
+        client_kwargs["proxy"] = proxy
+    if cookies:
+        client_kwargs["cookies"] = cookies
+
+    last_error: Optional[Exception] = None
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            async with httpx.AsyncClient(**client_kwargs) as client:
+                response = await client.get(url)
+                response.raise_for_status()
+
+            content_type = response.headers.get("content-type", "")
+            encoding = response.encoding or "utf-8"
+
+            if not any(t in content_type for t in ("html", "xml", "text")):
+                print(f"[skip] Non-text content-type at {url}: {content_type}")
+                return empty
+
+            soup = BeautifulSoup(response.text, "html.parser", from_encoding=encoding)
+
+            for tag in soup(junk_tags):
+                tag.decompose()
+
+            content_node = _extract_main_content(soup)
+            clean = _clean_text(content_node.get_text(separator="\n"))
+
+            return ScrapeResult(
+                text=clean,
+                meta=_extract_metadata(soup),
+                url=str(response.url),
+            )
+
+        except httpx.HTTPStatusError as e:
+            status = e.response.status_code
+            if status != 429 and 400 <= status < 500:
+                print(f"[{status}] Client error for {url} — not retrying.")
+                break
+            last_error = e
+            print(f"[{status}] Attempt {attempt}/{max_retries} failed for {url}.")
+
+        except (httpx.TimeoutException, httpx.ConnectError) as e:
+            last_error = e
+            print(f"[network] Attempt {attempt}/{max_retries} failed for {url}: {e}")
+
+        except Exception as e:
+            last_error = e
+            print(f"[error] Unexpected error scraping {url}: {e}")
+            break
+
+        if attempt < max_retries:
+            delay = retry_delay * (2 ** (attempt - 1)) + random.uniform(0, 0.5)
+            await asyncio.sleep(delay)
+
+    print(f"[failed] Gave up on {url}. Last error: {last_error}")
+    return empty

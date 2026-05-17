@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import ingest, query, config
+
+from app.api.v1.endpoints import config, ingest, query
 
 api_router = APIRouter()
 

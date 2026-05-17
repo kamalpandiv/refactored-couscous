@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
+
+from app.components.query_translation.enricher import enrich_query
+from app.core.dependencies import get_rag_engine, load_prompt
 from app.models.api_requests import ChatRequest
 from app.models.api_response import QueryResponse
-from app.core.dependencies import get_rag_engine, load_prompt
 
 router = APIRouter()
 
@@ -16,12 +18,14 @@ async def query_knowledge_base(request: ChatRequest, engine=Depends(get_rag_engi
     - **translation_strategy**: Optional strategy (multi_query, hyde, etc.)
     - **prompt_name**: Optional custom system prompt name
     """
-    if request.prompt_name:
-        engine.system_prompt = load_prompt(request.prompt_name)
+    custom_prompt = load_prompt(request.prompt_name) if request.prompt_name else None
+
+    enriched_query = enrich_query(request.message, request.file_name)
 
     result = await engine.answer_question(
-        query=request.message,
+        query=enriched_query,
         file_filter=request.file_name,
         translation_strategy=request.translation_strategy,
+        custom_system_prompt=custom_prompt,
     )
     return result

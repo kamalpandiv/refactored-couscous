@@ -62,22 +62,21 @@ async def ingest_url(
     request: UrlIngestRequest,
     service=Depends(get_ingestion_service),
 ):
-    """Scrape a website and ingest the text in the background."""
-    text = await parse_url(request.url)
+    result = await parse_url(request.url, respect_robots=False)
 
-    if not text:
+    if not result.text:
         raise HTTPException(status_code=400, detail="Could not extract text from URL")
 
     background_tasks.add_task(
         service.ingest_texts,
-        texts=[text],
+        texts=[result.text],
         source_name=request.url,
     )
 
     return IngestResponse(
-        url=request.url,
+        url=result.url or request.url,
         filename=request.url,
-        status="Processing started in background so No COUNTS!!!",
+        status="Processing started in background",
         count=None,
     )
 
