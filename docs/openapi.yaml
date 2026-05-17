@@ -1,0 +1,121 @@
+openapi: 3.0.0
+info:
+  title: openapi
+  version: 1.0.0
+paths:
+  /:
+    get:
+      summary: health check
+      operationId: users_gaan_documents_bruno_rag_framework_health_check_yml
+      description: ""
+      tags:
+        - ""
+      responses:
+        "200":
+          description: ""
+      servers:
+        - url: http://localhost:8000
+  /api/v1/config:
+    get:
+      summary: config for frontend
+      operationId: users_gaan_documents_bruno_rag_framework_config_for_frontend_yml
+      description: ""
+      tags:
+        - ""
+      responses:
+        "200":
+          description: ""
+      servers:
+        - url: http://localhost:8000
+  /api/v1/ingest/url:
+    post:
+      summary: url parse
+      operationId: users_gaan_documents_bruno_rag_framework_url_parse_yml
+      description: ""
+      tags:
+        - ""
+      responses:
+        "200":
+          description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/url_parse"
+      servers:
+        - url: http://localhost:8000
+  /api/v1/query:
+    post:
+      summary: query url content built-in prompt
+      operationId: >-
+        users_gaan_documents_bruno_rag_framework_query_url_content_built-in_prompt_yml
+      description: ""
+      tags:
+        - ""
+      responses:
+        "200":
+          description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/query_url_content_built-in_prompt"
+      servers:
+        - url: http://localhost:8000
+servers: []
+components:
+  schemas:
+    url_parse:
+      type: object
+      properties:
+        url:
+          type: string
+      example:
+        url: https://lucisqr.substack.com/p/c26-shipped-a-simd-library-nobody
+    query_url_content_custom_prompt:
+      type: object
+      properties:
+        message:
+          type: string
+        file_name:
+          type: string
+        prompt_name:
+          type: string
+      example:
+        message: >-
+          summarize this article for me, this article is about c26 shipped a
+          simd library nobody
+        file_name: https://lucisqr.substack.com/p/c26-shipped-a-simd-library-nobody
+        prompt_name: rag_fusion
+    query_url_content_built-in_prompt:
+      type: object
+      properties:
+        message:
+          type: string
+        file_name:
+          type: string
+        translation_strategy:
+          type: string
+      example:
+        message: >-
+          summarize this article for me, this article is about c26 shipped a
+          simd library nobody
+        file_name: https://lucisqr.substack.com/p/c26-shipped-a-simd-library-nobody
+        translation_strategy: multi_query
+  requestBodies:
+    url_parse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/url_parse"
+      description: ""
+      required: true
+    query_url_content_custom_prompt:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/query_url_content_custom_prompt"
+      description: ""
+      required: true
+    query_url_content_built-in_prompt:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/query_url_content_built-in_prompt"
+      description: ""
+      required: true
+  securitySchemes: {}

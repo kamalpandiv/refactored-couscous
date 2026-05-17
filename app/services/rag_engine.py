@@ -40,7 +40,7 @@ class RAGEngine:
         query: str,
         file_filter: Optional[str] = None,
         translation_strategy: Optional[QueryTranslationStrategyType] = None,
-        custom_system_prompt: Optional[str] = None,
+        system_prompt: Optional[str] = None,
     ) -> Dict:
         """
         Orchestrates: Translate -> Embed -> Retrieve -> Augment -> Generate
@@ -94,7 +94,7 @@ class RAGEngine:
         )
 
         # 5. Generate answer
-        selected_prompt = custom_system_prompt or self.system_prompt
+        selected_prompt = system_prompt or self.system_prompt
         print(f"Generating final response using LLM ({settings.LLM_MODEL})...")
         answer = await self.llm.generate_response(
             prompt=query,

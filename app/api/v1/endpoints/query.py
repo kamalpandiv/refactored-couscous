@@ -18,14 +18,13 @@ async def query_knowledge_base(request: ChatRequest, engine=Depends(get_rag_engi
     - **translation_strategy**: Optional strategy (multi_query, hyde, etc.)
     - **prompt_name**: Optional custom system prompt name
     """
-    custom_prompt = load_prompt(request.prompt_name) if request.prompt_name else None
-
+    system_prompt = load_prompt(request.prompt_name) if request.prompt_name else None
     enriched_query = enrich_query(request.message, request.file_name)
 
     result = await engine.answer_question(
         query=enriched_query,
         file_filter=request.file_name,
         translation_strategy=request.translation_strategy,
-        custom_system_prompt=custom_prompt,
+        system_prompt=system_prompt,
     )
     return result
