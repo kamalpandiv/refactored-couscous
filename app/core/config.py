@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
     APP_WORKERS: int
-    APP_RELOAD: bool = True
-    DEBUG: bool = True
+    APP_RELOAD: bool = False
+    DEBUG: bool = False
     USE_LOCAL_DB: bool = True
 
     # ==========================================
