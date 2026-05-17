@@ -7,8 +7,8 @@ class HydeTranslator(BaseQueryTranslator):
     async def translate(self, query: str) -> List[str]:
         prompt = self.user_prompt_template.format(query=query)
 
-        hypothetical_doc = await self.llm.generate_response(
-            prompt=prompt, context="", system_prompt=self.system_prompt
+        hypothetical_doc = await self.llm.complete(
+            prompt=prompt, system=self.system_prompt
         )
 
-        return [hypothetical_doc.strip()]
+        return [hypothetical_doc.content.strip()]

@@ -12,7 +12,6 @@ class LLMResponse:
 
 
 class BaseLLMProvider(ABC):
-
     @abstractmethod
     async def complete(self, prompt: str, system: str = "") -> LLMResponse: ...
 
@@ -24,3 +23,10 @@ class BaseLLMProvider(ABC):
     @property
     @abstractmethod
     def provider_name(self) -> str: ...
+
+    async def generate_response(self, prompt: str, system: str = "") -> LLMResponse:
+        """
+        An alias mapping to complete() to satisfy external structural calls
+        without breaking downstream components.
+        """
+        return await self.complete(prompt=prompt, system=system)

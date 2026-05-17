@@ -1,8 +1,9 @@
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 import psycopg
-from pgvector.psycopg import register_vector, register_vector_async
+import psycopg.rows
+from pgvector.psycopg import register_vector
 from psycopg.rows import dict_row
 from psycopg.sql import SQL, Composed, Identifier
 
@@ -19,20 +20,21 @@ class PGVectorDB(BaseVectorDB):
         print(f"rag_vectors_{self.dimension}")
         self._init_db()
 
-    def _get_connection(self) -> psycopg.Connection[Any]:
-        conn = psycopg.connect(self.db_url, row_factory=dict_row, autocommit=True)
-        try:
-            register_vector(conn)
-        except psycopg.ProgrammingError:
-            pass
-        return conn
-
-    async def _get_async_connection(self) -> psycopg.AsyncConnection[Any]:
-        conn = await psycopg.AsyncConnection.connect(
-            self.db_url, row_factory=dict_row, autocommit=True
+    def _get_sync_connection(self) -> psycopg.Connection[Dict[str, Any]]:
+        conn = psycopg.connect(
+            self.db_url,
+            row_factory=dict_row,  # type: ignore[bad-argument-type]
+            autocommit=True,
         )
-        await register_vector_async(conn)
-        return conn
+        return cast(psycopg.Connection[Dict[str, Any]], conn)
+
+    async def _get_async_connection(self) -> psycopg.AsyncConnection[Dict[str, Any]]:
+        conn = await psycopg.AsyncConnection.connect(
+            self.db_url,
+            row_factory=psycopg.rows.dict_row,  # type: ignore[bad-argument-type]
+            autocommit=True,
+        )
+        return cast(psycopg.AsyncConnection[Dict[str, Any]], conn)
 
     def _init_db(self):
         """Sync init — only runs once at startup, fine to be blocking."""
@@ -105,6 +107,7 @@ class PGVectorDB(BaseVectorDB):
 
         final_query = SQL(" ").join(base_query)
 
+        # Your connection already yields dict_rows, so we explicitly type the cursor layer
         async with await self._get_async_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
                 await cur.execute(final_query, params)
