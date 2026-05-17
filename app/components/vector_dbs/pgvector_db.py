@@ -1,11 +1,11 @@
 import json
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, cast
 
 import psycopg
 import psycopg.rows
 from pgvector.psycopg import register_vector
 from psycopg.rows import dict_row
-from psycopg.sql import SQL, Composed, Identifier
+from psycopg.sql import SQL, Identifier
 
 from app.core.config import settings
 from app.core.interfaces import BaseVectorDB
@@ -89,25 +89,23 @@ class PGVectorDB(BaseVectorDB):
         top_k: int,
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[DocumentChunk]:
-        base_query: List[Union[SQL, Composed]] = [
-            SQL(
-                "SELECT id, text, metadata, 1 - (embedding <=> %s::vector) AS score FROM {table}"
-            ).format(table=Identifier(self.table_name))
-        ]
-        params: List[Any] = [query_vector]
+        if not filters or "source" not in filters:
+            return []
 
-        if filters and "source" in filters:
-            source_file = filters["source"].get("$eq")
-            if source_file:
-                base_query.append(SQL("WHERE metadata->>'source' = %s"))
-                params.append(source_file)
+        source_file = filters["source"].get("$eq")
+        if not source_file:
+            return []
 
-        base_query.append(SQL("ORDER BY embedding <=> %s::vector LIMIT %s"))
-        params.extend([query_vector, top_k])
+        final_query = SQL("""
+            SELECT id, text, metadata, 1 - (embedding <=> %s::vector) AS score 
+            FROM {table}
+            WHERE metadata->>'source' = %s
+            ORDER BY embedding <=> %s::vector 
+            LIMIT %s
+        """).format(table=Identifier(self.table_name))
 
-        final_query = SQL(" ").join(base_query)
+        params = [query_vector, source_file, query_vector, top_k]
 
-        # Your connection already yields dict_rows, so we explicitly type the cursor layer
         async with await self._get_async_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
                 await cur.execute(final_query, params)

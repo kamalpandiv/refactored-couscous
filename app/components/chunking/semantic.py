@@ -18,7 +18,7 @@ class SemanticChunkingStrategy(BaseChunkingStrategy):
         self.splitter = SemanticChunker(
             embeddings=embedder,
             breakpoint_threshold_type="percentile",
-            breakpoint_threshold_amount=95,  # Adjustable: Lower (e.g. 80) = More/Smaller chunks
+            breakpoint_threshold_amount=95,
         )
 
     def chunk(self, text: str) -> List[str]:

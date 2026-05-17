@@ -4,7 +4,6 @@ from typing import List, Literal
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Load .env early
 load_dotenv()
 
 
@@ -16,7 +15,7 @@ class Settings(BaseSettings):
     # ==========================================
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
-    APP_WORKERS: int = 1
+    APP_WORKERS: int
     APP_RELOAD: bool = True
     DEBUG: bool = True
     USE_LOCAL_DB: bool = True

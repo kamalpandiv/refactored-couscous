@@ -15,12 +15,10 @@ class LlamaCppProvider(BaseLLMProvider):
     def __init__(self):
         self.remote_url = getattr(settings, "REMOTE_LLAMACPP_URL", None)
 
-        # Pull timeouts dynamically from settings
         remote_timeout = getattr(settings, "LLM_REMOTE_TIMEOUT", 60.0)
         connect_timeout = getattr(settings, "LLM_REMOTE_CONNECT_TIMEOUT", 10.0)
         self.timeout = httpx.Timeout(remote_timeout, connect=connect_timeout)
 
-        # Centrally defined generation config to share between remote payloads and local setups
         self.max_tokens = getattr(settings, "LLM_MAX_TOKENS", 2000)
         self.stop_sequences = getattr(
             settings, "LLM_STOP_SEQUENCES", ["<|im_end|>", "<|im_start|>", " assistant"]
@@ -53,7 +51,6 @@ class LlamaCppProvider(BaseLLMProvider):
 
         print(f"Loading local model into RAM: {settings.LOCAL_MODEL}")
 
-        # Pull local-specific constraints safely out of global configs
         n_ctx = getattr(settings, "LLM_N_CTX", 4000)
         top_p = getattr(settings, "LLM_TOP_P", 0.9)
         n_gpu_layers = getattr(settings, "LLM_N_GPU_LAYERS", -1)
@@ -90,7 +87,6 @@ class LlamaCppProvider(BaseLLMProvider):
         return f"llamacpp/{settings.LOCAL_MODEL}"
 
     def _build_prompt(self, prompt: str, system: str) -> str:
-        # Prompt wrappers can also be moved to settings if you shift from ChatML to Llama-3/Alpaca formats later
         if system:
             return (
                 f"<|im_start|>system\n{system}<|im_end|>\n"

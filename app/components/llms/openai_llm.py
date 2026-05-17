@@ -44,12 +44,11 @@ class OpenAIProvider(BaseLLMProvider):
         )
 
     async def stream(self, prompt: str, system: str = "") -> AsyncIterator[str]:
-        # Use create(stream=True) — chunks have .choices unlike the context-manager version
         response = await self.client.chat.completions.create(
             model=self.model,
             messages=self._build_messages(prompt, system),
             temperature=settings.LLM_TEMP,
-            stream=True,  # ← raw stream, chunks are ChatCompletionChunk with .choices
+            stream=True,
         )
         async for chunk in response:
             delta = chunk.choices[0].delta.content

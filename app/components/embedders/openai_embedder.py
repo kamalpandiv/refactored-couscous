@@ -24,8 +24,7 @@ class OpenAIEmbedder(BaseEmbedder):
         Embeds a list of strings.
         GUARANTEES it returns a List[List[float]] so .extend() works correctly.
         """
-        # AsyncOpenAI might drop completely empty strings, causing a length mismatch.
-        # This ensures every chunk gets exactly one vector back.
+
         safe_texts = [t if t.strip() else " " for t in texts]
 
         response = await self.client.embeddings.create(

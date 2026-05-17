@@ -15,9 +15,12 @@ class UrlIngestRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(..., description="User question or message")
-    file_name: Optional[str] = Field(
-        None, description="Filter search to a specific file name"
+
+    file_name: str = Field(
+        ...,
+        description="The EXACT file name to search within. Strictly required for query isolation.",
     )
+
     translation_strategy: Optional[QueryTranslationStrategyType] = Field(
         None, description="Strategy for query translation (e.g., multi_query, hyde)"
     )

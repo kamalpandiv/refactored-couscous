@@ -24,7 +24,6 @@ class TokenSafeMixin:
                 safe_chunks.append(chunk)
                 continue
 
-            # Split large chunks
             for i in range(0, len(tokens), self.max_tokens):
                 sub_tokens = tokens[i : i + self.max_tokens]
                 safe_chunks.append(self.encoder.decode(sub_tokens))

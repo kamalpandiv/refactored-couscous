@@ -63,7 +63,7 @@ class RAGEngine:
             for i, q in enumerate(queries_to_embed):
                 print(f"        {i + 1}. {q}")
         else:
-            print("No translation strategy applied. Using raw query.")
+            print("No translation strategy applied. Using enriched query.")
         print(f"[TIMER] Translation:   {time.time() - start_time:.2f}s")
         start_time = time.time()
 

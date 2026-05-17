@@ -81,8 +81,6 @@ class PineconeDB(BaseVectorDB):
             filter=filters,
         )
 
-        # FIX: Scrub the Union type using cast.
-        # This forces the linter to treat it dynamically and bypasses the Catch-22 error completely.
         res = cast(Any, raw_res)
 
         results = []

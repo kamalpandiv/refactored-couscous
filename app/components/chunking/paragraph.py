@@ -5,8 +5,6 @@ from .base import BaseChunkingStrategy
 
 class ParagraphChunkingStrategy(BaseChunkingStrategy):
     def __init__(self, chunk_size: int = 1000, overlap_size: int = 200):
-        # We use characters here for speed, relying on TokenSafeChunker
-        # to catch edge cases later.
         self.chunk_size = chunk_size
         self.overlap_size = overlap_size
 
