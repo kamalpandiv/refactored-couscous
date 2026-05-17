@@ -1,5 +1,5 @@
 from app.components.embedders.openai_embedder import OpenAIEmbedder
-from app.components.llms.openai_llm import OpenAILLM
+from app.components.llms.factory import get_llm_provider
 from app.components.vector_dbs.pgvector_db import PGVectorDB
 from app.components.vector_dbs.pinecone_db import PineconeDB
 from app.core.config import settings
@@ -24,11 +24,14 @@ def get_ingestion_service() -> IngestionService:
     return IngestionService(embedder=OpenAIEmbedder(), vector_db=get_db())
 
 
+llm_backend = get_llm_provider()
+
+
 def get_rag_engine() -> RAGEngine:
     system_prompt = load_prompt(settings.SYSTEM_PROMPT_FILE)
     return RAGEngine(
         vector_db=get_db(),
         embedder=OpenAIEmbedder(),
-        llm=OpenAILLM(),
+        llm=llm_backend,
         system_prompt=system_prompt,
     )

@@ -1,19 +1,18 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from app.core.interfaces import BaseLLM
+from app.components.llms.base import BaseLLMProvider
 
 
 class BaseQueryTranslator(ABC):
-    def __init__(self, llm: BaseLLM, system_prompt: str, user_prompt_template: str):
+    def __init__(
+        self, llm: BaseLLMProvider, system_prompt: str, user_prompt_template: str
+    ):
         self.llm = llm
         self.system_prompt = system_prompt
         self.user_prompt_template = user_prompt_template
 
     @abstractmethod
     async def translate(self, query: str) -> List[str]:
-        """
-        Translates a single user query into a list of queries or
-        hypothetical documents.
-        """
+        """Translate or expand a user query into one or more optimized queries."""
         pass

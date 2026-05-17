@@ -2,12 +2,13 @@ import asyncio
 import time
 from typing import Dict, List, Optional
 
+from app.components.llms.base import BaseLLMProvider
 from app.components.query_translation import (
     QueryTranslationFactory,
     QueryTranslationStrategyType,
 )
 from app.core.config import settings
-from app.core.interfaces import BaseEmbedder, BaseLLM, BaseVectorDB
+from app.core.interfaces import BaseEmbedder, BaseVectorDB
 from app.models.domain import DocumentChunk
 
 
@@ -16,7 +17,7 @@ class RAGEngine:
         self,
         vector_db: BaseVectorDB,
         embedder: BaseEmbedder,
-        llm: BaseLLM,
+        llm: BaseLLMProvider,
         system_prompt: str = "",
     ):
         self.vector_db = vector_db
@@ -95,11 +96,15 @@ class RAGEngine:
 
         # 5. Generate answer
         selected_prompt = system_prompt or self.system_prompt
-        print(f"Generating final response using LLM ({settings.LLM_MODEL})...")
-        answer = await self.llm.generate_response(
-            prompt=query,
-            context=context_text,
-            system_prompt=selected_prompt,
+        print(f"Generating final response using LLM ({settings.LLM_PROVIDER})...")
+        combined_prompt = (
+            f"Use the following context to answer the question.\n\n"
+            f"Context:\n{context_text}\n\n"
+            f"Question: {query}"
+        )
+        answer = await self.llm.complete(
+            prompt=combined_prompt,
+            system=selected_prompt,
         )
         print(f"[TIMER] LLM Generate:  {time.time() - start_time:.2f}s")
         print(f"[TIMER] Total:         {time.time() - start_time:.2f}s")
@@ -108,7 +113,7 @@ class RAGEngine:
         print(f"[RAG Engine] Pipeline complete in {duration:.2f} seconds.\n")
 
         return {
-            "answer": answer,
+            "answer": answer.content if hasattr(answer, "content") else answer,
             "citations": [c.metadata for c in unique_chunks],
             "generated_queries": queries_to_embed,
         }

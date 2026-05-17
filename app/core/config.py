@@ -35,9 +35,15 @@ class Settings(BaseSettings):
     # =========================
     # LLM Settings
     # =========================
+    LLM_PROVIDER: Literal["openai", "ollama", "llamacpp"] = "openai"
     LOCAL_MODEL: str = "models/Hermes-2-Pro-Llama-3-8B.Q4_K_M.gguf"
     LLM_MODEL: str = "gpt-4o-mini"
+    OLLAMA_MODEL: str = "llama3"
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
     LLM_TEMP: float = 0
+
+    # Set the URL of your other server
+    REMOTE_LLAMACPP_URL: str = "http://192.168.29.106:8080"
 
     # =========================
     # Embeddings

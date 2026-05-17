@@ -53,7 +53,7 @@ def health_check():
             "db_url": settings.DATABASE_URL,
         },
         "models": {
-            "llm_model": settings.LLM_MODEL,
+            "llm_model": settings.LLM_PROVIDER,
             "embedding_model": settings.EMBEDDING_MODEL,
             "embedding_dimension": settings.EMBEDDING_DIMENSION,
             "local_model": settings.LOCAL_MODEL if settings.USE_LOCAL_DB else None,

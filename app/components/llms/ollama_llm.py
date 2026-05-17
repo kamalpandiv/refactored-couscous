@@ -7,14 +7,22 @@ from app.components.llms.base import BaseLLMProvider, LLMResponse
 from app.core.config import settings
 
 
-class OpenAIProvider(BaseLLMProvider):
+class OllamaProvider(BaseLLMProvider):
+    """
+    Ollama runs locally and speaks the OpenAI protocol.
+    Start: `ollama serve` then `ollama pull llama3`
+    """
+
     def __init__(self):
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = settings.LLM_MODEL
+        self.client = AsyncOpenAI(
+            base_url=f"{settings.OLLAMA_BASE_URL}/v1",
+            api_key="ollama",
+        )
+        self.model = settings.OLLAMA_MODEL
 
     @property
     def provider_name(self) -> str:
-        return f"openai/{self.model}"
+        return f"ollama/{self.model}"
 
     def _build_messages(
         self, prompt: str, system: str
@@ -26,30 +34,30 @@ class OpenAIProvider(BaseLLMProvider):
         return messages
 
     async def complete(self, prompt: str, system: str = "") -> LLMResponse:
-        response = await self.client.chat.completions.create(
+        resp = await self.client.chat.completions.create(
             model=self.model,
             messages=self._build_messages(prompt, system),
             temperature=settings.LLM_TEMP,
         )
 
-        content = response.choices[0].message.content
+        content = resp.choices[0].message.content
         if content is None:
-            raise ValueError("OpenAI returned an empty response.")
+            raise ValueError("Ollama returned an empty response.")
 
         return LLMResponse(
             content=content,
             model=self.model,
-            prompt_tokens=response.usage.prompt_tokens if response.usage else 0,
-            completion_tokens=response.usage.completion_tokens if response.usage else 0,
+            prompt_tokens=resp.usage.prompt_tokens if resp.usage else 0,
+            completion_tokens=resp.usage.completion_tokens if resp.usage else 0,
         )
 
+    # ← NOT async def (async generator = plain def returning AsyncIterator)
     async def stream(self, prompt: str, system: str = "") -> AsyncIterator[str]:
-        # Use create(stream=True) — chunks have .choices unlike the context-manager version
         response = await self.client.chat.completions.create(
             model=self.model,
             messages=self._build_messages(prompt, system),
             temperature=settings.LLM_TEMP,
-            stream=True,  # ← raw stream, chunks are ChatCompletionChunk with .choices
+            stream=True,  # ← create(stream=True) not .stream() context manager
         )
         async for chunk in response:
             delta = chunk.choices[0].delta.content

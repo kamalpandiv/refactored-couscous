@@ -1,6 +1,6 @@
 from typing import Literal
 
-from app.core.interfaces import BaseLLM
+from app.components.llms.base import BaseLLMProvider
 from app.core.prompt_loader import load_prompt
 
 from .base import BaseQueryTranslator
@@ -13,7 +13,7 @@ QueryTranslationStrategyType = Literal["multi_query", "step_back", "rag_fusion",
 class QueryTranslationFactory:
     @staticmethod
     def create(
-        strategy: QueryTranslationStrategyType, llm: BaseLLM
+        strategy: QueryTranslationStrategyType, llm: BaseLLMProvider
     ) -> BaseQueryTranslator:
         if strategy == "multi_query":
             system_prompt = load_prompt("multi_query", category="system")
